@@ -14,21 +14,32 @@ import { getUserErrorMessage } from '@/lib/errorMessages';
 import { useBookings } from '@/hooks/useBookings';
 import { useCreateBooking } from '@/hooks/useCreateBooking';
 import { useDeleteBooking } from '@/hooks/useDeleteBooking';
+import { useUpdateBooking } from '@/hooks/useUpdateBooking';
+import type { Booking } from '@/types/booking';
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [selectedSpot, setSelectedSpot] = useState<number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
 
   const today = new Date().toISOString().split('T')[0];
 
   const { data: bookings = [], isLoading: loading } = useBookings({ dateFrom: today });
   const createBooking = useCreateBooking();
   const deleteBooking = useDeleteBooking();
+  const updateBooking = useUpdateBooking();
 
   const handleBookSpot = (spotNumber: number) => {
+    setEditingBooking(null);
     setSelectedSpot(spotNumber);
+    setDialogOpen(true);
+  };
+
+  const handleEditBooking = (booking: Booking) => {
+    setEditingBooking(booking);
+    setSelectedSpot(booking.spot_number);
     setDialogOpen(true);
   };
 
@@ -43,6 +54,27 @@ const Index = () => {
   }) => {
     if (!user) {
       toast.error('You must be logged in to book a spot');
+      return;
+    }
+
+    if (editingBooking) {
+      updateBooking.mutate(
+        {
+          bookingId: editingBooking.id,
+          date: booking.date,
+          duration: booking.duration,
+          start_time: booking.start_time,
+          end_time: booking.end_time,
+          vehicle_type: booking.vehicle_type,
+        },
+        {
+          onSuccess: () => toast.success('Booking updated successfully!'),
+          onError: error => {
+            console.error('Error updating booking:', error);
+            toast.error(getUserErrorMessage(error, 'booking_create'));
+          },
+        }
+      );
       return;
     }
 
@@ -395,6 +427,16 @@ const Index = () => {
                                         <Button
                                           variant="outline"
                                           size="sm"
+                                          onClick={() => handleEditBooking(booking)}
+                                          className="border-primary/30 text-primary hover:border-primary hover:bg-primary h-6 px-1.5 text-[10px] transition-all hover:text-white sm:text-xs"
+                                        >
+                                          Edit
+                                        </Button>
+                                      )}
+                                      {booking.user_id === user?.id && (
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
                                           onClick={() => handleUnbook(booking.id)}
                                           className="border-destructive/30 text-destructive hover:border-destructive hover:bg-destructive h-6 px-1.5 text-[10px] transition-all hover:text-white sm:text-xs"
                                         >
@@ -512,6 +554,7 @@ const Index = () => {
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           spotNumber={selectedSpot}
+          editingBooking={editingBooking ?? undefined}
           onConfirm={handleConfirmBooking}
         />
       )}

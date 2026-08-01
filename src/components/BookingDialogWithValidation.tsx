@@ -12,8 +12,19 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Car, Bike, Clock, Sun, Sunset, Loader2, UserPlus } from 'lucide-react';
+import {
+  CalendarIcon,
+  Car,
+  Bike,
+  Clock,
+  Sun,
+  Sunset,
+  Loader2,
+  UserPlus,
+  Pencil,
+} from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import type { Booking } from '@/types/booking';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -25,6 +36,7 @@ interface BookingDialogWithValidationProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   spotNumber: number;
+  editingBooking?: Booking;
   onConfirm: (booking: {
     date: string;
     duration: Duration;
@@ -40,10 +52,12 @@ export const BookingDialogWithValidation = ({
   open,
   onOpenChange,
   spotNumber,
+  editingBooking,
   onConfirm,
 }: BookingDialogWithValidationProps) => {
   const { user } = useAuth();
   const { profile } = useUserProfile();
+  const isEditing = !!editingBooking;
   const defaultVehicle = (profile?.default_vehicle_type as 'car' | 'motorcycle' | null) ?? 'car';
   const defaultStartTime = profile?.default_start_time ?? DURATION_PRESETS.full.start_time;
   const defaultEndTime = profile?.default_end_time ?? DURATION_PRESETS.full.end_time;
@@ -61,7 +75,32 @@ export const BookingDialogWithValidation = ({
   // Prefill today's date and profile defaults when dialog opens (or when profile loads while dialog is open)
   useEffect(() => {
     if (!open) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+
+    if (editingBooking) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDate(new Date(editingBooking.date + 'T00:00:00'));
+
+      setVehicleType(editingBooking.vehicle_type as 'car' | 'motorcycle');
+
+      setStartTime(editingBooking.start_time.slice(0, 5));
+
+      setEndTime(editingBooking.end_time.slice(0, 5));
+      const matchedPreset = (
+        Object.entries(DURATION_PRESETS) as [Duration, { start_time: string; end_time: string }][]
+      ).find(
+        ([, p]) =>
+          p.start_time === editingBooking.start_time.slice(0, 5) &&
+          p.end_time === editingBooking.end_time.slice(0, 5)
+      );
+
+      setDuration(matchedPreset?.[0] ?? (editingBooking.duration as Duration));
+
+      setBehalfMode(false);
+
+      setBehalfEmail('');
+      return;
+    }
+
     setDate(new Date(new Date().setHours(0, 0, 0, 0)));
 
     setVehicleType(defaultVehicle);
@@ -144,13 +183,18 @@ export const BookingDialogWithValidation = ({
         <DialogHeader className="px-6 pt-6">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <div className="gradient-primary flex h-8 w-8 items-center justify-center rounded-lg">
-              <CalendarIcon className="h-4 w-4 text-white" />
+              {isEditing ? (
+                <Pencil className="h-4 w-4 text-white" />
+              ) : (
+                <CalendarIcon className="h-4 w-4 text-white" />
+              )}
             </div>
-            Book Spot {spotNumber}
+            {isEditing ? `Edit Booking — Spot ${spotNumber}` : `Book Spot ${spotNumber}`}
           </DialogTitle>
           <DialogDescription>
-            Fill in the details to reserve your parking spot. You can book multiple spots per day as
-            long as the times don't overlap.
+            {isEditing
+              ? 'Update the details for this booking.'
+              : "Fill in the details to reserve your parking spot. You can book multiple spots per day as long as the times don't overlap."}
           </DialogDescription>
         </DialogHeader>
 
@@ -365,26 +409,28 @@ export const BookingDialogWithValidation = ({
             </div>
           </div>
 
-          {/* Book on behalf of another user */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-2 text-sm font-semibold">
-                <UserPlus className="h-4 w-4" />
-                Book for someone else
-              </Label>
-              <Switch checked={behalfMode} onCheckedChange={setBehalfMode} />
+          {/* Book on behalf of another user — hidden in edit mode */}
+          {!isEditing && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2 text-sm font-semibold">
+                  <UserPlus className="h-4 w-4" />
+                  Book for someone else
+                </Label>
+                <Switch checked={behalfMode} onCheckedChange={setBehalfMode} />
+              </div>
+              {behalfMode && (
+                <Input
+                  type="email"
+                  placeholder="colleague@lht.dlh.de"
+                  value={behalfEmail}
+                  onChange={e => setBehalfEmail(e.target.value)}
+                  className="h-10"
+                  autoFocus
+                />
+              )}
             </div>
-            {behalfMode && (
-              <Input
-                type="email"
-                placeholder="colleague@lht.dlh.de"
-                value={behalfEmail}
-                onChange={e => setBehalfEmail(e.target.value)}
-                className="h-10"
-                autoFocus
-              />
-            )}
-          </div>
+          )}
         </div>
 
         <div className="flex gap-3 border-t px-6 py-4">
@@ -404,8 +450,10 @@ export const BookingDialogWithValidation = ({
             {isValidating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Validating...
+                {isEditing ? 'Updating...' : 'Validating...'}
               </>
+            ) : isEditing ? (
+              'Update Booking'
             ) : (
               'Confirm Booking'
             )}

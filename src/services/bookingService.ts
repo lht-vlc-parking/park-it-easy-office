@@ -293,6 +293,40 @@ export class BookingService {
   }
 
   /**
+   * Update an existing booking
+   */
+  static async updateBooking(
+    bookingId: string,
+    data: Pick<CreateBookingData, 'date' | 'duration' | 'start_time' | 'end_time' | 'vehicle_type'>
+  ): Promise<BookingResult> {
+    try {
+      const { data: updated, error } = await supabase
+        .from('bookings')
+        .update({
+          date: data.date,
+          duration: data.duration,
+          start_time: data.start_time,
+          end_time: data.end_time,
+          vehicle_type: data.vehicle_type,
+          capacity: this.getCapacityForVehicle(data.vehicle_type),
+        })
+        .eq('id', bookingId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating booking:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: updated };
+    } catch (error) {
+      console.error('Unexpected error updating booking:', error);
+      return { success: false, error: 'An unexpected error occurred.' };
+    }
+  }
+
+  /**
    * Cancel a booking
    */
   static async cancelBooking(bookingId: string): Promise<BookingResult> {
