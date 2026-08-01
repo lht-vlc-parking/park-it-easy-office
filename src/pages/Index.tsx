@@ -201,6 +201,15 @@ const Index = () => {
             <div className="flex items-center gap-2 self-start md:self-auto">
               <ThemeToggle variant="minimal" className="text-white hover:bg-white/20" />
               <Button
+                onClick={() => navigate('/statistics?tab=profile')}
+                variant="outline"
+                className="glass-button border-white/30 text-white shadow-lg transition-all hover:scale-105"
+                size="lg"
+              >
+                <User className="mr-2 h-5 w-5" />
+                <span className="hidden sm:inline">My Profile</span>
+              </Button>
+              <Button
                 onClick={() => navigate('/statistics')}
                 className="glass-button border-white/30 text-white shadow-lg transition-all hover:scale-105"
                 size="lg"

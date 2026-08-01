@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ArrowLeft, BarChart3, User, Users, TrendingUp } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useStatistics } from '@/hooks/useStatistics';
 import { ThemeToggle } from '@/components/v2/ThemeToggle';
@@ -14,6 +14,7 @@ import { useBookings } from '@/hooks/useBookings';
 
 const Statistics = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
 
   const { data: bookings = [], isLoading: loading } = useBookings();
@@ -75,7 +76,7 @@ const Statistics = () => {
             <p className="text-muted-foreground">Loading statistics...</p>
           </div>
         ) : (
-          <Tabs defaultValue="overview" className="animate-fade-in-up">
+          <Tabs defaultValue={searchParams.get('tab') ?? 'overview'} className="animate-fade-in-up">
             {/* Tab Navigation - scrollable on mobile */}
             <TabsList className="bg-muted/60 mb-6 grid h-auto w-full grid-cols-4 gap-1 rounded-xl p-1 backdrop-blur-sm sm:gap-2 sm:p-1.5">
               <TabsTrigger

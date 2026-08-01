@@ -671,6 +671,9 @@ export default function MyProfileTab({
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {/* === Booking Preferences === */}
+      <SettingsCard />
+
       {/* === 1. Parking Score Hero Card === */}
       <Card className="glass-card animate-fade-in-up shadow-glow overflow-hidden">
         <CardHeader className="pb-2 text-center">
@@ -951,9 +954,6 @@ export default function MyProfileTab({
           </div>
         </CardContent>
       </Card>
-
-      {/* === 5. Booking Preferences === */}
-      <SettingsCard />
     </div>
   );
 }
