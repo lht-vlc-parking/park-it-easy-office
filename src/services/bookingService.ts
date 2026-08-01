@@ -23,6 +23,7 @@ export interface CreateBookingData {
   end_time: string; // HH:mm
   vehicle_type: VehicleType;
   spot_number: number;
+  behalfEmail?: string; // When set, books for that user instead of the caller
   related_vehicle_type?: VehicleType; // For future car+moto combo bookings
 }
 
@@ -211,7 +212,7 @@ export class BookingService {
     userName: string
   ): Promise<BookingResult> {
     try {
-      // Validate booking
+      // Validate booking (spot conflicts — fast client-side check)
       const validation = await this.validateBooking(
         data.spot_number,
         data.date,
@@ -221,10 +222,27 @@ export class BookingService {
       );
 
       if (!validation.valid) {
-        return {
-          success: false,
-          error: validation.error,
-        };
+        return { success: false, error: validation.error };
+      }
+
+      // Book on behalf of another user via SECURITY DEFINER RPC
+      if (data.behalfEmail) {
+        const { data: rows, error } = await supabase.rpc('book_on_behalf_of', {
+          p_behalf_email: data.behalfEmail.toLowerCase().trim(),
+          p_date: data.date,
+          p_duration: data.duration,
+          p_start_time: data.start_time,
+          p_end_time: data.end_time,
+          p_vehicle_type: data.vehicle_type,
+          p_spot_number: data.spot_number,
+        });
+
+        if (error) {
+          console.error('Error booking on behalf:', error);
+          return { success: false, error: error.message };
+        }
+
+        return { success: true, data: rows?.[0] };
       }
 
       // Create booking

@@ -39,6 +39,7 @@ const Index = () => {
     end_time: string;
     vehicle_type: 'car' | 'motorcycle';
     spot_number: number;
+    behalfEmail?: string;
   }) => {
     if (!user) {
       toast.error('You must be logged in to book a spot');
@@ -53,11 +54,17 @@ const Index = () => {
         end_time: booking.end_time,
         vehicle_type: booking.vehicle_type,
         spot_number: booking.spot_number,
+        behalfEmail: booking.behalfEmail,
         userId: user.id,
         userName: user.user_metadata?.user_name || user.email || 'Unknown',
       },
       {
-        onSuccess: () => toast.success('Parking spot booked successfully!'),
+        onSuccess: () =>
+          toast.success(
+            booking.behalfEmail
+              ? `Booking created for ${booking.behalfEmail}`
+              : 'Parking spot booked successfully!'
+          ),
         onError: error => {
           console.error('Error creating booking:', error);
           toast.error(getUserErrorMessage(error, 'booking_create'));

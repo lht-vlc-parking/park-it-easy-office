@@ -12,7 +12,8 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Car, Bike, Clock, Sun, Sunset, Loader2 } from 'lucide-react';
+import { CalendarIcon, Car, Bike, Clock, Sun, Sunset, Loader2, UserPlus } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -31,6 +32,7 @@ interface BookingDialogWithValidationProps {
     end_time: string;
     vehicle_type: 'car' | 'motorcycle';
     spot_number: number;
+    behalfEmail?: string;
   }) => void;
 }
 
@@ -53,6 +55,8 @@ export const BookingDialogWithValidation = ({
   const [vehicleType, setVehicleType] = useState<'car' | 'motorcycle'>(defaultVehicle);
   const [isValidating, setIsValidating] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [behalfMode, setBehalfMode] = useState(false);
+  const [behalfEmail, setBehalfEmail] = useState('');
 
   // Prefill today's date and profile defaults when dialog opens (or when profile loads while dialog is open)
   useEffect(() => {
@@ -71,6 +75,8 @@ export const BookingDialogWithValidation = ({
     ).find(([, p]) => p.start_time === defaultStartTime && p.end_time === defaultEndTime);
 
     setDuration(matchedPreset?.[0] ?? 'full');
+    setBehalfMode(false);
+    setBehalfEmail('');
   }, [open, profile]); // eslint-disable-line react-hooks/exhaustive-deps -- profile is the async dependency
 
   const handleDurationChange = (value: Duration) => {
@@ -95,6 +101,11 @@ export const BookingDialogWithValidation = ({
       return;
     }
 
+    if (behalfMode && !behalfEmail.trim()) {
+      toast.error('Please enter the email of the user to book for');
+      return;
+    }
+
     setIsValidating(true);
     const selectedDateStr = format(date, 'yyyy-MM-dd');
 
@@ -107,6 +118,7 @@ export const BookingDialogWithValidation = ({
         end_time: endTime,
         vehicle_type: vehicleType,
         spot_number: spotNumber,
+        ...(behalfMode && { behalfEmail: behalfEmail.trim() }),
       });
 
       // Reset form
@@ -115,6 +127,8 @@ export const BookingDialogWithValidation = ({
       setEndTime(defaultEndTime);
       setDuration('full');
       setVehicleType(defaultVehicle);
+      setBehalfMode(false);
+      setBehalfEmail('');
       onOpenChange(false);
     } catch (error) {
       console.error('Error validating booking:', error);
@@ -349,6 +363,27 @@ export const BookingDialogWithValidation = ({
                 />
               </div>
             </div>
+          </div>
+
+          {/* Book on behalf of another user */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2 text-sm font-semibold">
+                <UserPlus className="h-4 w-4" />
+                Book for someone else
+              </Label>
+              <Switch checked={behalfMode} onCheckedChange={setBehalfMode} />
+            </div>
+            {behalfMode && (
+              <Input
+                type="email"
+                placeholder="colleague@lht.dlh.de"
+                value={behalfEmail}
+                onChange={e => setBehalfEmail(e.target.value)}
+                className="h-10"
+                autoFocus
+              />
+            )}
           </div>
         </div>
 
