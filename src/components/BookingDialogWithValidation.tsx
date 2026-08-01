@@ -16,8 +16,8 @@ import { CalendarIcon, Car, Bike, Clock, Sun, Sunset, Loader2 } from 'lucide-rea
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { DURATION_PRESETS, type Duration } from '@/services/bookingService';
 
 interface BookingDialogWithValidationProps {
@@ -41,21 +41,37 @@ export const BookingDialogWithValidation = ({
   onConfirm,
 }: BookingDialogWithValidationProps) => {
   const { user } = useAuth();
+  const { profile } = useUserProfile();
+  const defaultVehicle = (profile?.default_vehicle_type as 'car' | 'motorcycle' | null) ?? 'car';
+  const defaultStartTime = profile?.default_start_time ?? DURATION_PRESETS.full.start_time;
+  const defaultEndTime = profile?.default_end_time ?? DURATION_PRESETS.full.end_time;
+
   const [date, setDate] = useState<Date>();
   const [duration, setDuration] = useState<Duration>('full');
-  const [startTime, setStartTime] = useState(DURATION_PRESETS.full.start_time);
-  const [endTime, setEndTime] = useState(DURATION_PRESETS.full.end_time);
-  const [vehicleType, setVehicleType] = useState<'car' | 'motorcycle'>('car');
+  const [startTime, setStartTime] = useState(defaultStartTime);
+  const [endTime, setEndTime] = useState(defaultEndTime);
+  const [vehicleType, setVehicleType] = useState<'car' | 'motorcycle'>(defaultVehicle);
   const [isValidating, setIsValidating] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
 
-  // Prefill today's date when dialog opens
+  // Prefill today's date and profile defaults when dialog opens (or when profile loads while dialog is open)
   useEffect(() => {
-    if (open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setDate(new Date(new Date().setHours(0, 0, 0, 0)));
-    }
-  }, [open]);
+    if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDate(new Date(new Date().setHours(0, 0, 0, 0)));
+
+    setVehicleType(defaultVehicle);
+
+    setStartTime(defaultStartTime);
+
+    setEndTime(defaultEndTime);
+    // Infer the matching preset (or keep 'full' as fallback)
+    const matchedPreset = (
+      Object.entries(DURATION_PRESETS) as [Duration, { start_time: string; end_time: string }][]
+    ).find(([, p]) => p.start_time === defaultStartTime && p.end_time === defaultEndTime);
+
+    setDuration(matchedPreset?.[0] ?? 'full');
+  }, [open, profile]); // eslint-disable-line react-hooks/exhaustive-deps -- profile is the async dependency
 
   const handleDurationChange = (value: Duration) => {
     setDuration(value);
@@ -83,24 +99,6 @@ export const BookingDialogWithValidation = ({
     const selectedDateStr = format(date, 'yyyy-MM-dd');
 
     try {
-      // Check if user already has a booking on this date
-      const { data: userBookings, error: userError } = await supabase
-        .from('bookings')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('date', selectedDateStr);
-
-      if (userError) throw userError;
-
-      if (userBookings && userBookings.length > 0) {
-        const existingBooking = userBookings[0];
-        toast.error(
-          `You already have a booking on this date (Spot ${existingBooking.spot_number}, ${existingBooking.vehicle_type === 'car' ? '🚗 Car' : '🏍️ Motorcycle'})`
-        );
-        setIsValidating(false);
-        return;
-      }
-
       // All pre-validation passed — delegate conflict validation to the service via onConfirm
       onConfirm({
         date: selectedDateStr,
@@ -113,8 +111,10 @@ export const BookingDialogWithValidation = ({
 
       // Reset form
       setDate(undefined);
-      handleDurationChange('full');
-      setVehicleType('car');
+      setStartTime(defaultStartTime);
+      setEndTime(defaultEndTime);
+      setDuration('full');
+      setVehicleType(defaultVehicle);
       onOpenChange(false);
     } catch (error) {
       console.error('Error validating booking:', error);
@@ -135,7 +135,8 @@ export const BookingDialogWithValidation = ({
             Book Spot {spotNumber}
           </DialogTitle>
           <DialogDescription>
-            Fill in the details to reserve your parking spot. You can only have one booking per day.
+            Fill in the details to reserve your parking spot. You can book multiple spots per day as
+            long as the times don't overlap.
           </DialogDescription>
         </DialogHeader>
 
