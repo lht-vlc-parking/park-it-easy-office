@@ -1,9 +1,18 @@
+allowBuilds:
+  esbuild: false
+
 # Security: Do not install packages published less than 2 days ago
 # Protects against supply chain attacks from recently compromised packages
 # 2 days = 2880 minutes
 minimumReleaseAge: 2880
 
-ignoredBuiltDependencies:
-  - '@swc/core'
-  - esbuild
-  - sharp
+# ponytail: empty allow-list = no post-install scripts run; avoids ERR_PNPM_IGNORED_BUILDS
+onlyBuiltDependencies: []
+
+overrides:
+  'brace-expansion@>=1.1.0 <1.1.13': '1.1.13'
+  'brace-expansion@>=2.0.0 <2.0.3': '2.0.3'
+  'picomatch@>=2.0.0 <2.3.2': '2.3.2'
+  'picomatch@>=4.0.0 <4.0.4': '4.0.4'
+  'yaml@>=2.0.0 <2.8.3': '2.8.3'
+  'vite@>=7.0.0 <7.3.2': '7.3.2'
