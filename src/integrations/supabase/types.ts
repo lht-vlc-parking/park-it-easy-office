@@ -62,6 +62,7 @@ export type Database = {
           default_start_time: string | null;
           default_end_time: string | null;
           notification_preferences: Json;
+          is_admin: boolean;
           created_at: string;
           updated_at: string;
         };

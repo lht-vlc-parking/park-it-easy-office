@@ -72,5 +72,6 @@ export const useUserProfile = () => {
     loading,
     updateProfile,
     refetch: fetchProfile,
+    isAdmin: profile?.is_admin ?? false,
   };
 };

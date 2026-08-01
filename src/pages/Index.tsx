@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { BarChart3, Calendar, LogOut, User, Clock, Activity, Car, Bike } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { ThemeToggle } from '@/components/v2/ThemeToggle';
 import { getUserErrorMessage } from '@/lib/errorMessages';
 import { useBookings } from '@/hooks/useBookings';
@@ -20,6 +21,7 @@ import type { Booking } from '@/types/booking';
 const Index = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { isAdmin } = useUserProfile();
   const [selectedSpot, setSelectedSpot] = useState<number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
@@ -423,7 +425,7 @@ const Index = () => {
                                         {booking.start_time.slice(0, 5)}–
                                         {booking.end_time.slice(0, 5)}
                                       </Badge>
-                                      {booking.user_id === user?.id && (
+                                      {(booking.user_id === user?.id || isAdmin) && (
                                         <Button
                                           variant="outline"
                                           size="sm"
@@ -433,7 +435,7 @@ const Index = () => {
                                           Edit
                                         </Button>
                                       )}
-                                      {booking.user_id === user?.id && (
+                                      {(booking.user_id === user?.id || isAdmin) && (
                                         <Button
                                           variant="outline"
                                           size="sm"
