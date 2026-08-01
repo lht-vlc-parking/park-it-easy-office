@@ -45,7 +45,6 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@hookform/resolvers": "5.5.7",
     "@radix-ui/react-accordion": "1.2.20",
     "@radix-ui/react-alert-dialog": "1.1.23",
     "@radix-ui/react-aspect-ratio": "1.1.15",
@@ -103,10 +102,10 @@
     "@tailwindcss/typography": "0.5.20",
     "@testing-library/jest-dom": "7.0.0",
     "@testing-library/react": "16.3.2",
-    "@testing-library/user-event": "14.6.1",
     "@types/node": "26.1.2",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
+    "@typescript/native": "npm:typescript@^7.0.2",
     "@vitejs/plugin-react": "6.0.4",
     "@vitest/ui": "4.1.10",
     "autoprefixer": "10.5.4",
@@ -123,7 +122,7 @@
     "prettier-plugin-tailwindcss": "0.8.1",
     "sharp": "0.35.3",
     "tailwindcss": "4.3.3",
-    "typescript": "5.9.3",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
     "typescript-eslint": "8.65.0",
     "vite": "8.1.5",
     "vitest": "4.1.10"
