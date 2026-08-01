@@ -1,9 +1,27 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Line } from 'recharts';
-import { Flame, Car, Bike, MapPin, Clock, Calendar, Award, Zap } from 'lucide-react';
+import {
+  Flame,
+  Car,
+  Bike,
+  MapPin,
+  Clock,
+  Calendar,
+  Sun,
+  Sunset,
+  Award,
+  Zap,
+  Settings,
+} from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import type { Booking } from '@/types/booking';
+import { DURATION_PRESETS, type Duration } from '@/services/bookingService';
 
 interface MyProfileTabProps {
   bookings: Booking[];
@@ -138,6 +156,174 @@ function SubScoreBar({
         />
       </div>
     </div>
+  );
+}
+
+// --- Settings Card ---
+
+function SettingsCard() {
+  const { profile, loading, updateProfile } = useUserProfile();
+  const [vehicle, setVehicle] = useState<'car' | 'motorcycle' | null>(null);
+  const [startTime, setStartTime] = useState<string | null>(null);
+  const [endTime, setEndTime] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const effectiveVehicle =
+    vehicle ?? (profile?.default_vehicle_type as 'car' | 'motorcycle' | null) ?? 'car';
+  const effectiveStart = startTime ?? profile?.default_start_time ?? '08:00';
+  const effectiveEnd = endTime ?? profile?.default_end_time ?? '22:00';
+
+  const handlePreset = (value: Duration) => {
+    setStartTime(DURATION_PRESETS[value].start_time);
+    setEndTime(DURATION_PRESETS[value].end_time);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    await updateProfile({
+      default_vehicle_type: effectiveVehicle,
+      default_start_time: effectiveStart,
+      default_end_time: effectiveEnd,
+    });
+    setSaving(false);
+    // Reset dirty tracking
+    setVehicle(null);
+    setStartTime(null);
+    setEndTime(null);
+  };
+
+  const isDirty = vehicle !== null || startTime !== null || endTime !== null;
+
+  if (loading) return null;
+
+  return (
+    <Card className="glass-card animate-fade-in-up">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <Settings className="text-primary h-5 w-5" />
+          Booking Preferences
+        </CardTitle>
+        <CardDescription>Pre-selected defaults when opening the booking dialog</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold">Default Vehicle</Label>
+          <RadioGroup
+            value={effectiveVehicle}
+            onValueChange={v => setVehicle(v as 'car' | 'motorcycle')}
+            className="grid grid-cols-2 gap-3"
+          >
+            {(['car', 'motorcycle'] as const).map(v => (
+              <Label
+                key={v}
+                htmlFor={`pref-${v}`}
+                className={cn(
+                  'flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all',
+                  effectiveVehicle === v
+                    ? v === 'car'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-accent bg-accent/10'
+                    : 'border-border hover:bg-muted/50'
+                )}
+              >
+                <RadioGroupItem value={v} id={`pref-${v}`} className="hidden" />
+                {v === 'car' ? (
+                  <Car
+                    className={cn(
+                      'h-7 w-7',
+                      effectiveVehicle === 'car' ? 'text-primary' : 'text-muted-foreground'
+                    )}
+                  />
+                ) : (
+                  <Bike
+                    className={cn(
+                      'h-7 w-7',
+                      effectiveVehicle === 'motorcycle' ? 'text-accent' : 'text-muted-foreground'
+                    )}
+                  />
+                )}
+                <span className="text-sm font-medium capitalize">{v}</span>
+              </Label>
+            ))}
+          </RadioGroup>
+        </div>
+
+        <div className="space-y-3">
+          <Label className="text-sm font-semibold">Default Time Slot</Label>
+          <div className="flex gap-2">
+            {(
+              [
+                { value: 'full' as const, label: 'Full', icon: <Clock className="h-3.5 w-3.5" /> },
+                {
+                  value: 'morning' as const,
+                  label: 'Morning',
+                  icon: <Sun className="h-3.5 w-3.5" />,
+                },
+                {
+                  value: 'afternoon' as const,
+                  label: 'Afternoon',
+                  icon: <Sunset className="h-3.5 w-3.5" />,
+                },
+              ] as const
+            ).map(opt => {
+              const isActive =
+                effectiveStart === DURATION_PRESETS[opt.value].start_time &&
+                effectiveEnd === DURATION_PRESETS[opt.value].end_time;
+              return (
+                <Button
+                  key={opt.value}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePreset(opt.value)}
+                  className={cn(
+                    'flex-1 gap-1 text-xs',
+                    isActive && 'border-primary bg-primary/10 text-primary'
+                  )}
+                >
+                  {opt.icon}
+                  {opt.label}
+                </Button>
+              );
+            })}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="pref-start" className="text-muted-foreground text-xs">
+                Start
+              </Label>
+              <input
+                id="pref-start"
+                type="time"
+                value={effectiveStart}
+                onChange={e => setStartTime(e.target.value)}
+                className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="pref-end" className="text-muted-foreground text-xs">
+                End
+              </Label>
+              <input
+                id="pref-end"
+                type="time"
+                value={effectiveEnd}
+                onChange={e => setEndTime(e.target.value)}
+                className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        <Button
+          onClick={handleSave}
+          disabled={saving || !isDirty}
+          className="gradient-primary w-full font-semibold text-white"
+        >
+          {saving ? 'Saving…' : 'Save Preferences'}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -452,29 +638,34 @@ export default function MyProfileTab({
 
   if (!currentUserName) {
     return (
-      <Card className="glass-card animate-fade-in-up">
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Award className="text-muted-foreground mb-4 h-12 w-12" />
-          <p className="text-lg font-semibold">Sign in to see your profile</p>
-          <p className="text-muted-foreground text-sm">
-            Your personal parking stats will appear here.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="space-y-4 sm:space-y-6">
+        <Card className="glass-card animate-fade-in-up">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Award className="text-muted-foreground mb-4 h-12 w-12" />
+            <p className="text-lg font-semibold">Sign in to see your profile</p>
+            <p className="text-muted-foreground text-sm">
+              Your personal parking stats will appear here.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   if (myBookings.length === 0) {
     return (
-      <Card className="glass-card animate-fade-in-up">
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Zap className="text-muted-foreground mb-4 h-12 w-12" />
-          <p className="text-lg font-semibold">No bookings yet</p>
-          <p className="text-muted-foreground text-sm">
-            Start booking parking spots to build your profile!
-          </p>
-        </CardContent>
-      </Card>
+      <div className="space-y-4 sm:space-y-6">
+        <Card className="glass-card animate-fade-in-up">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Zap className="text-muted-foreground mb-4 h-12 w-12" />
+            <p className="text-lg font-semibold">No bookings yet</p>
+            <p className="text-muted-foreground text-sm">
+              Start booking parking spots to build your profile!
+            </p>
+          </CardContent>
+        </Card>
+        <SettingsCard />
+      </div>
     );
   }
 
@@ -760,6 +951,9 @@ export default function MyProfileTab({
           </div>
         </CardContent>
       </Card>
+
+      {/* === 5. Booking Preferences === */}
+      <SettingsCard />
     </div>
   );
 }

@@ -57,6 +57,9 @@ export function getUserErrorMessage(
     if (supaError.message.includes('already has a booking')) {
       return 'You already have a booking for this date.';
     }
+    if (supaError.message.includes('overlaps this time slot')) {
+      return 'You already have a booking that overlaps this time slot.';
+    }
     if (supaError.message.includes('car booking at that time')) {
       return 'This spot already has a car booked for that time slot.';
     }
