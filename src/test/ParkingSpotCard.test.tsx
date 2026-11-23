@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { ParkingSpotCard } from '../components/ParkingSpotCard';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { SmallCarIndicator } from '@/components/SmallCarIndicator';
 import { DURATION_PRESETS } from '../services/bookingService';
 import type { Booking } from '../types/booking';
 
@@ -12,6 +14,7 @@ const makeBooking = (overrides: Partial<Booking> & { id: string; date: string })
     start_time: preset.start_time,
     end_time: preset.end_time,
     vehicle_type: 'car',
+    capacity: null,
     user_name: 'Test User',
     spot_number: 84,
     user_id: 'user-1',
@@ -21,6 +24,64 @@ const makeBooking = (overrides: Partial<Booking> & { id: string; date: string })
 };
 
 describe('ParkingSpotCard', () => {
+  it.each([0, 1, 2])('shows remaining room in a tooltip with %i motorcycles', async count => {
+    const today = new Date().toISOString().split('T')[0];
+    render(
+      <TooltipProvider>
+        <ParkingSpotCard
+          spotNumber={84}
+          onBook={vi.fn()}
+          currentBookings={[
+            makeBooking({ id: 'car', date: today, capacity: 2 }),
+            ...Array.from({ length: count }, (_, i) =>
+              makeBooking({ id: `bike-${i}`, date: today, vehicle_type: 'motorcycle', capacity: 1 })
+            ),
+          ]}
+        />
+      </TooltipProvider>
+    );
+    const indicator = screen.getByRole('button', { name: 'Small car (2/4 capacity)' });
+    const name = screen.getAllByText('Test User')[0];
+    expect(name.previousElementSibling).toHaveClass('lucide-car');
+    expect(name.nextElementSibling).toBe(indicator);
+    expect(indicator).toHaveTextContent('Small car');
+    expect(screen.queryByText(/Small car \(2\/4 capacity\)/)).not.toBeInTheDocument();
+    fireEvent.focus(indicator);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      `Small car (2/4 capacity). Room for ${2 - count} more ${count === 1 ? 'motorcycle' : 'motorcycles'} during this booking.`
+    );
+    fireEvent.keyDown(indicator, { key: 'Escape' });
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    expect(screen.getByText(count === 2 ? '✕ Full' : '◐ Partial')).toBeInTheDocument();
+  });
+
+  it('does not show a small-car label for regular cars or motorcycles', () => {
+    const today = new Date().toISOString().split('T')[0];
+    render(
+      <ParkingSpotCard
+        spotNumber={84}
+        onBook={vi.fn()}
+        currentBookings={[
+          makeBooking({ id: 'car', date: today, capacity: 3 }),
+          makeBooking({ id: 'bike', date: today, vehicle_type: 'motorcycle', capacity: 1 }),
+        ]}
+      />
+    );
+    expect(screen.queryByRole('button', { name: /Small car/ })).not.toBeInTheDocument();
+  });
+
+  it('explains small-car capacity when remaining availability is not provided', async () => {
+    render(
+      <TooltipProvider>
+        <SmallCarIndicator />
+      </TooltipProvider>
+    );
+    fireEvent.focus(screen.getByRole('button', { name: 'Small car (2/4 capacity)' }));
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'Small car (2/4 capacity). Room for up to 2 motorcycles.'
+    );
+  });
+
   describe('Book button behavior', () => {
     it('should always enable "Book This Spot" button when no bookings exist', () => {
       const onBook = vi.fn();

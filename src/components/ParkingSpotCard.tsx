@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Car, Bike, Calendar, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BookingService } from '@/services/bookingService';
+import { SmallCarIndicator } from '@/components/SmallCarIndicator';
 import type { Booking } from '@/types/booking';
 
 interface ParkingSpotCardProps {
@@ -20,10 +21,6 @@ export const ParkingSpotCard = ({ spotNumber, currentBookings, onBook }: Parking
       (a, b) => a.start_time.localeCompare(b.start_time) || a.end_time.localeCompare(b.end_time)
     );
 
-  const getCapacityForVehicle = (vehicleType: 'car' | 'motorcycle'): number => {
-    return vehicleType === 'car' ? 3 : 1;
-  };
-
   /** Returns capacity stats for an arbitrary query window [qStart, qEnd). */
   const getCapacityInfo = (qStart: string, qEnd: string) => {
     const bookingsForWindow = todayBookings.filter(b =>
@@ -31,7 +28,7 @@ export const ParkingSpotCard = ({ spotNumber, currentBookings, onBook }: Parking
     );
 
     const usedCapacity = bookingsForWindow.reduce(
-      (sum, b) => sum + (b.capacity || getCapacityForVehicle(b.vehicle_type)),
+      (sum, b) => sum + (b.capacity || BookingService.getCapacityForVehicle(b.vehicle_type)),
       0
     );
 
@@ -127,7 +124,7 @@ export const ParkingSpotCard = ({ spotNumber, currentBookings, onBook }: Parking
           </Badge>
         </div>
         <CardDescription className="text-muted-foreground text-xs font-medium sm:text-sm">
-          Capacity: 4 units (Car = 3, Bike = 1)
+          Capacity: 4 units (Car = 3, Small car = 2, Bike = 1)
         </CardDescription>
       </CardHeader>
       <CardContent className="relative space-y-3 sm:space-y-4">
@@ -165,6 +162,14 @@ export const ParkingSpotCard = ({ spotNumber, currentBookings, onBook }: Parking
                     <span className="truncate text-xs font-medium sm:text-sm">
                       {booking.user_name}
                     </span>
+                    {booking.vehicle_type === 'car' && booking.capacity === 2 && (
+                      <SmallCarIndicator
+                        availableMotorcycles={Math.max(
+                          0,
+                          getCapacityInfo(booking.start_time, booking.end_time).available
+                        )}
+                      />
+                    )}
                   </div>
                 </div>
               ))}

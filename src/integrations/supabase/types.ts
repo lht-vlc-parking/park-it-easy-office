@@ -354,6 +354,19 @@ export type Database = {
       };
     };
     Functions: {
+      book_on_behalf_of: {
+        Args: {
+          p_behalf_email: string;
+          p_date: string;
+          p_duration: string;
+          p_start_time: string;
+          p_end_time: string;
+          p_vehicle_type: string;
+          p_spot_number: number;
+          p_is_small_car?: boolean;
+        };
+        Returns: Database['public']['Tables']['bookings']['Row'][];
+      };
       generate_recurring_bookings: {
         Args: { days_ahead?: number };
         Returns: number;

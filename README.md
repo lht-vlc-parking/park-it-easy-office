@@ -30,6 +30,7 @@
 - **Instant Availability** — See open spots at a glance
 - **Flexible Time Slots** — Morning, afternoon, or full day
 - **Vehicle Support** — Cars & motorcycles (up to 4 per spot)
+- **Small Cars** — Toggle "Small car (room for 2 bikes)" when creating or editing a car booking to use 2/4 capacity instead of 3/4. Hover or focus the small-car label on booking tiles for capacity details; today's spot cards also show remaining motorcycle room in the tooltip. A small car can share with two motorcycles, but never another car.
 - **Conflict Prevention** — No double bookings, ever
 
 </td>
@@ -159,6 +160,8 @@ supabase db push
 ```
 
 This applies every migration in order, creating all tables, views, RLS policies, triggers, and functions required by the app.
+
+`20261123000001_add_small_car_capacity.sql` allows 2-unit small-car bookings and adds the option to bookings made for someone else. Apply this migration before deploying the small-car UI. Existing bookings keep their capacity.
 
 #### 4. (Optional) Reset the database
 

@@ -3,7 +3,7 @@ import { BookingService, type CreateBookingData } from '@/services/bookingServic
 
 interface UpdateBookingParams extends Pick<
   CreateBookingData,
-  'date' | 'duration' | 'start_time' | 'end_time' | 'vehicle_type'
+  'date' | 'duration' | 'start_time' | 'end_time' | 'vehicle_type' | 'is_small_car'
 > {
   bookingId: string;
 }

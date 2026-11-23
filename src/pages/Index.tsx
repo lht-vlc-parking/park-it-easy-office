@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ParkingSpotCard } from '@/components/ParkingSpotCard';
+import { SmallCarIndicator } from '@/components/SmallCarIndicator';
 import { BookingDialogWithValidation } from '@/components/BookingDialogWithValidation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +52,7 @@ const Index = () => {
     start_time: string;
     end_time: string;
     vehicle_type: 'car' | 'motorcycle';
+    is_small_car?: boolean;
     spot_number: number;
     behalfEmail?: string;
   }) => {
@@ -68,6 +70,7 @@ const Index = () => {
           start_time: booking.start_time,
           end_time: booking.end_time,
           vehicle_type: booking.vehicle_type,
+          is_small_car: booking.is_small_car,
         },
         {
           onSuccess: () => toast.success('Booking updated successfully!'),
@@ -87,6 +90,7 @@ const Index = () => {
         start_time: booking.start_time,
         end_time: booking.end_time,
         vehicle_type: booking.vehicle_type,
+        is_small_car: booking.is_small_car,
         spot_number: booking.spot_number,
         behalfEmail: booking.behalfEmail,
         userId: user.id,
@@ -400,9 +404,12 @@ const Index = () => {
                                       ) : (
                                         <Bike className="text-accent h-3 w-3 flex-shrink-0 sm:h-4 sm:w-4" />
                                       )}
-                                      <span className="text-xs font-medium break-words sm:text-sm">
+                                      <span className="truncate text-xs font-medium sm:text-sm">
                                         {booking.user_name}
                                       </span>
+                                      {booking.vehicle_type === 'car' && booking.capacity === 2 && (
+                                        <SmallCarIndicator />
+                                      )}
                                     </div>
                                     <div className="flex flex-shrink-0 items-center gap-1.5">
                                       {booking.user_id === user?.id && (

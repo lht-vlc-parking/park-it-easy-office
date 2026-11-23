@@ -22,6 +22,7 @@ export interface CreateBookingData {
   start_time: string; // HH:mm
   end_time: string; // HH:mm
   vehicle_type: VehicleType;
+  is_small_car?: boolean;
   spot_number: number;
   behalfEmail?: string; // When set, books for that user instead of the caller
   related_vehicle_type?: VehicleType; // For future car+moto combo bookings
@@ -44,7 +45,7 @@ const dbBookingSchema = z.object({
   user_name: z.string(),
   spot_number: z.number(),
   user_id: z.string().optional(),
-  capacity: z.number().optional(),
+  capacity: z.number().nullish(),
   created_at: z.string().optional(),
 });
 
@@ -62,8 +63,8 @@ export class BookingService {
   /**
    * Get capacity required for a vehicle type
    */
-  private static getCapacityForVehicle(vehicleType: VehicleType): number {
-    return vehicleType === 'car' ? this.CAR_CAPACITY : this.MOTORCYCLE_CAPACITY;
+  static getCapacityForVehicle(vehicleType: VehicleType, isSmallCar = false): number {
+    return vehicleType === 'car' ? (isSmallCar ? 2 : this.CAR_CAPACITY) : this.MOTORCYCLE_CAPACITY;
   }
 
   /**
@@ -98,7 +99,8 @@ export class BookingService {
     date: string,
     startTime: string,
     endTime: string,
-    vehicleType: VehicleType
+    vehicleType: VehicleType,
+    isSmallCar = false
   ): Promise<{ valid: boolean; error?: string }> {
     // Validate spot number
     if (!this.VALID_SPOTS.includes(spotNumber)) {
@@ -162,7 +164,7 @@ export class BookingService {
             return null;
           }
         })
-        .filter(Boolean) || [];
+        .filter(b => b !== null) || [];
 
     // Check for car conflicts (cars cannot overlap with other cars)
     if (vehicleType === 'car') {
@@ -183,7 +185,7 @@ export class BookingService {
     // Motorcycles can coexist with cars; capacity check handles the limit
 
     // Check total capacity for the time slot
-    const requiredCapacity = this.getCapacityForVehicle(vehicleType);
+    const requiredCapacity = this.getCapacityForVehicle(vehicleType, isSmallCar);
     const overlappingBookings = validatedBookings.filter(b =>
       this.timesOverlap(startTime, endTime, b.start_time, b.end_time)
     );
@@ -218,7 +220,8 @@ export class BookingService {
         data.date,
         data.start_time,
         data.end_time,
-        data.vehicle_type
+        data.vehicle_type,
+        data.is_small_car
       );
 
       if (!validation.valid) {
@@ -235,6 +238,7 @@ export class BookingService {
           p_end_time: data.end_time,
           p_vehicle_type: data.vehicle_type,
           p_spot_number: data.spot_number,
+          p_is_small_car: data.vehicle_type === 'car' && !!data.is_small_car,
         });
 
         if (error) {
@@ -257,7 +261,7 @@ export class BookingService {
           end_time: data.end_time,
           vehicle_type: data.vehicle_type,
           spot_number: data.spot_number,
-          capacity: this.getCapacityForVehicle(data.vehicle_type),
+          capacity: this.getCapacityForVehicle(data.vehicle_type, data.is_small_car),
         })
         .select()
         .single();
@@ -297,7 +301,10 @@ export class BookingService {
    */
   static async updateBooking(
     bookingId: string,
-    data: Pick<CreateBookingData, 'date' | 'duration' | 'start_time' | 'end_time' | 'vehicle_type'>
+    data: Pick<
+      CreateBookingData,
+      'date' | 'duration' | 'start_time' | 'end_time' | 'vehicle_type' | 'is_small_car'
+    >
   ): Promise<BookingResult> {
     try {
       const { data: updated, error } = await supabase
@@ -308,7 +315,7 @@ export class BookingService {
           start_time: data.start_time,
           end_time: data.end_time,
           vehicle_type: data.vehicle_type,
-          capacity: this.getCapacityForVehicle(data.vehicle_type),
+          capacity: this.getCapacityForVehicle(data.vehicle_type, data.is_small_car),
         })
         .eq('id', bookingId)
         .select()

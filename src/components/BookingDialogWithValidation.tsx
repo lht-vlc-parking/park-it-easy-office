@@ -43,6 +43,7 @@ interface BookingDialogWithValidationProps {
     start_time: string;
     end_time: string;
     vehicle_type: 'car' | 'motorcycle';
+    is_small_car?: boolean;
     spot_number: number;
     behalfEmail?: string;
   }) => void;
@@ -67,6 +68,7 @@ export const BookingDialogWithValidation = ({
   const [startTime, setStartTime] = useState(defaultStartTime);
   const [endTime, setEndTime] = useState(defaultEndTime);
   const [vehicleType, setVehicleType] = useState<'car' | 'motorcycle'>(defaultVehicle);
+  const [isSmallCar, setIsSmallCar] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [behalfMode, setBehalfMode] = useState(false);
@@ -81,6 +83,7 @@ export const BookingDialogWithValidation = ({
       setDate(new Date(editingBooking.date + 'T00:00:00'));
 
       setVehicleType(editingBooking.vehicle_type as 'car' | 'motorcycle');
+      setIsSmallCar(editingBooking.vehicle_type === 'car' && editingBooking.capacity === 2);
 
       setStartTime(editingBooking.start_time.slice(0, 5));
 
@@ -104,6 +107,7 @@ export const BookingDialogWithValidation = ({
     setDate(new Date(new Date().setHours(0, 0, 0, 0)));
 
     setVehicleType(defaultVehicle);
+    setIsSmallCar(false);
 
     setStartTime(defaultStartTime);
 
@@ -156,6 +160,7 @@ export const BookingDialogWithValidation = ({
         start_time: startTime,
         end_time: endTime,
         vehicle_type: vehicleType,
+        is_small_car: vehicleType === 'car' && isSmallCar,
         spot_number: spotNumber,
         ...(behalfMode && { behalfEmail: behalfEmail.trim() }),
       });
@@ -166,6 +171,7 @@ export const BookingDialogWithValidation = ({
       setEndTime(defaultEndTime);
       setDuration('full');
       setVehicleType(defaultVehicle);
+      setIsSmallCar(false);
       setBehalfMode(false);
       setBehalfEmail('');
       onOpenChange(false);
@@ -235,7 +241,10 @@ export const BookingDialogWithValidation = ({
             <Label className="text-sm font-semibold">Vehicle Type</Label>
             <RadioGroup
               value={vehicleType}
-              onValueChange={v => setVehicleType(v as 'car' | 'motorcycle')}
+              onValueChange={v => {
+                setVehicleType(v as 'car' | 'motorcycle');
+                setIsSmallCar(false);
+              }}
               className="grid grid-cols-2 gap-3"
             >
               <Label
@@ -285,6 +294,17 @@ export const BookingDialogWithValidation = ({
                 </div>
               </Label>
             </RadioGroup>
+            {vehicleType === 'car' && (
+              <div className="bg-muted/50 flex items-center justify-between gap-2 rounded-lg p-3">
+                <Label
+                  htmlFor="small-car"
+                  className="text-xs font-medium whitespace-nowrap sm:text-sm"
+                >
+                  Small car (room for 2 bikes)
+                </Label>
+                <Switch id="small-car" checked={isSmallCar} onCheckedChange={setIsSmallCar} />
+              </div>
+            )}
           </div>
 
           <div className="space-y-3">
