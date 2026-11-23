@@ -17,7 +17,18 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, Calendar, LogOut, User, Clock, Activity, Car, Bike } from 'lucide-react';
+import {
+  BarChart3,
+  Calendar,
+  LogOut,
+  User,
+  Clock,
+  Activity,
+  Car,
+  Bike,
+  Pencil,
+  X,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -386,7 +397,7 @@ const Index = () => {
                 </p>
               </div>
               {groupedUpcomingBookings.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-4 sm:space-y-3">
                   {groupedUpcomingBookings
                     .sort((a, b) => {
                       const dateDiff = a.date.localeCompare(b.date);
@@ -404,7 +415,7 @@ const Index = () => {
                           key={`${group.date}-${group.spot_number}`}
                           date={group.date}
                           spotNumber={group.spot_number}
-                          className={`glass-card animate-fade-in-up relative flex flex-col justify-between rounded-xl border-2 p-4 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg sm:flex-row sm:items-center ${
+                          className={`glass-card animate-fade-in-up relative flex flex-col justify-between rounded-xl border-2 px-2 py-4 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg min-[360px]:px-4 sm:flex-row sm:items-center ${
                             isToday
                               ? 'border-warning/50 bg-warning/5'
                               : isMyBooking
@@ -413,9 +424,9 @@ const Index = () => {
                           } ${isToday ? 'ring-warning/30 ring-offset-background ring-2 ring-offset-2' : ''}`}
                           style={{ animationDelay: `${index * 50}ms` }}
                         >
-                          <div className="mb-3 flex w-full items-start gap-3 sm:mb-0 sm:gap-4">
+                          <div className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-3 sm:gap-x-4 sm:gap-y-0">
                             <div
-                              className={`min-w-12.5 rounded-xl p-2 text-center sm:min-w-15 ${
+                              className={`min-w-12.5 rounded-xl p-2 text-center sm:row-span-2 sm:min-w-15 ${
                                 isToday
                                   ? 'bg-warning/20 ring-warning ring-2'
                                   : isMyBooking
@@ -440,28 +451,28 @@ const Index = () => {
                                 })}
                               </div>
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2 truncate font-semibold">
-                                Spot {group.spot_number}
-                                <span className="text-muted-foreground text-xs font-normal">
-                                  · {group.bookings?.length}{' '}
-                                  {group.bookings?.length === 1 ? 'booking' : 'bookings'}
+                            <div className="flex min-w-0 flex-wrap items-center gap-2 truncate font-semibold">
+                              Spot {group.spot_number}
+                              <span className="text-muted-foreground text-xs font-normal">
+                                · {group.bookings?.length}{' '}
+                                {group.bookings?.length === 1 ? 'booking' : 'bookings'}
+                              </span>
+                              {isToday && (
+                                <span className="bg-warning rounded-full px-2 py-0.5 text-xs text-white shadow-sm">
+                                  Today
                                 </span>
-                                {isToday && (
-                                  <span className="bg-warning rounded-full px-2 py-0.5 text-xs text-white shadow-sm">
-                                    Today
-                                  </span>
-                                )}
-                              </div>
+                              )}
+                            </div>
+                            <div className="col-span-2 min-w-0 space-y-2 sm:col-span-1 sm:col-start-2 sm:mt-1.5 sm:space-y-1.5">
                               {group.bookings.map((booking, i) => (
                                 <DraggableBooking
                                   key={booking.id}
                                   booking={booking}
-                                  className="animate-fade-in border-border/50 bg-muted/50 mt-1.5 rounded-lg border p-2"
+                                  className="animate-fade-in border-border/50 bg-muted/50 rounded-lg border py-2 pr-1 pl-2 min-[360px]:pr-2"
                                   style={{ animationDelay: `${i * 50}ms` }}
                                 >
-                                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                    <div className="flex min-w-0 items-center gap-2">
+                                  <div className="flex min-w-0 items-center justify-between gap-0.5 min-[360px]:gap-1 sm:gap-2">
+                                    <div className="flex min-w-0 flex-1 items-center gap-0.5 min-[360px]:gap-1 sm:gap-2">
                                       {booking.vehicle_type === 'car' ? (
                                         <Car className="text-primary h-3 w-3 flex-shrink-0 sm:h-4 sm:w-4" />
                                       ) : (
@@ -474,16 +485,16 @@ const Index = () => {
                                         <SmallCarIndicator />
                                       )}
                                     </div>
-                                    <div className="flex flex-wrap items-center gap-1.5 sm:flex-shrink-0">
+                                    <div className="flex shrink-0 items-center gap-0.5 min-[360px]:gap-1 sm:gap-1.5">
                                       {booking.user_id === user?.id && (
-                                        <span className="bg-success rounded-full px-2 py-0.5 text-xs font-semibold text-white shadow-sm">
+                                        <span className="bg-success rounded-full px-1 py-0.5 text-[10px] font-semibold text-white shadow-sm sm:px-2 sm:text-xs">
                                           You
                                         </span>
                                       )}
                                       <Badge
                                         variant="outline"
                                         className={cn(
-                                          'text-[10px] font-medium whitespace-nowrap sm:text-xs',
+                                          'px-1 text-[10px] font-medium whitespace-nowrap sm:px-2.5 sm:text-xs',
                                           booking.duration === 'full' &&
                                             'border-primary/50 bg-primary/10 text-primary',
                                           booking.duration === 'morning' &&
@@ -501,9 +512,10 @@ const Index = () => {
                                           size="sm"
                                           disabled={Boolean(movingBooking)}
                                           onClick={() => handleEditBooking(booking)}
-                                          className="border-primary/30 text-primary hover:border-primary hover:bg-primary h-6 px-1.5 text-[10px] transition-all hover:text-white sm:text-xs"
+                                          className="border-primary/30 text-primary hover:border-primary hover:bg-primary h-6 w-6 p-0 text-[10px] transition-all hover:text-white sm:w-auto sm:px-1.5 sm:text-xs"
                                         >
-                                          Edit
+                                          <Pencil className="sm:hidden" aria-hidden="true" />
+                                          <span className="sr-only sm:not-sr-only">Edit</span>
                                         </Button>
                                       )}
                                       {(booking.user_id === user?.id || isAdmin) && (
@@ -512,9 +524,10 @@ const Index = () => {
                                           size="sm"
                                           disabled={Boolean(movingBooking)}
                                           onClick={() => handleUnbook(booking.id)}
-                                          className="border-destructive/30 text-destructive hover:border-destructive hover:bg-destructive h-6 px-1.5 text-[10px] transition-all hover:text-white sm:text-xs"
+                                          className="border-destructive/30 text-destructive hover:border-destructive hover:bg-destructive h-6 w-6 p-0 text-[10px] transition-all hover:text-white sm:w-auto sm:px-1.5 sm:text-xs"
                                         >
-                                          Cancel
+                                          <X className="sm:hidden" aria-hidden="true" />
+                                          <span className="sr-only sm:not-sr-only">Cancel</span>
                                         </Button>
                                       )}
                                     </div>
