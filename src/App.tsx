@@ -1,9 +1,9 @@
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from 'next-themes';
 import Index from './pages/Index';
 import Statistics from './pages/Statistics';
 import Auth from './pages/Auth';
@@ -22,13 +22,7 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <ErrorBoundary>
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      storageKey="park-it-easy-theme"
-      disableTransitionOnChange={false}
-    >
+    <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />

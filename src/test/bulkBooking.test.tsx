@@ -138,7 +138,12 @@ describe('Bulk booking requests', () => {
   it('renders the failure notification in the frontend after the dialog closes', async () => {
     vi.doUnmock('sonner');
     const { Toaster } = await import('@/components/ui/sonner');
-    render(<Toaster />);
+    const { ThemeProvider } = await import('@/components/ThemeProvider');
+    render(
+      <ThemeProvider>
+        <Toaster />
+      </ThemeProvider>
+    );
     createBooking.mockRejectedValue(new Error('This spot already has a car booking at that time'));
     await openBookingDialog();
     selectThreeDays();
