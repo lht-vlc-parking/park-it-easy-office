@@ -22,6 +22,7 @@ const SUPABASE_ERROR_MAP: Record<string, string> = {
 const GENERIC_MESSAGES: Record<string, string> = {
   auth: 'Authentication failed. Please try again.',
   booking_create: 'Failed to create booking. Please try again.',
+  booking_update: 'Failed to update booking. Please try again.',
   booking_cancel: 'Failed to cancel booking. Please try again.',
   booking_fetch: 'Failed to load bookings. Please try again.',
   password_reset: 'Failed to process password reset. Please try again.',
@@ -62,6 +63,9 @@ export function getUserErrorMessage(
     }
     if (supaError.message.includes('car booking at that time')) {
       return 'This spot already has a car booked for that time slot.';
+    }
+    if (supaError.message.includes('Not enough capacity')) {
+      return 'There is not enough room in this spot for that time slot.';
     }
     if (supaError.message.includes('Maximum 4 motorcycles')) {
       return 'This spot has reached the maximum number of motorcycles for that time slot.';

@@ -1,5 +1,12 @@
 import { useMemo, useState } from 'react';
+import { format } from 'date-fns';
 import { ParkingSpotCard } from '@/components/ParkingSpotCard';
+import {
+  BookingDragDrop,
+  BookingDropTarget,
+  DraggableBooking,
+  type BookingDestination,
+} from '@/components/BookingDragDrop';
 import { SmallCarIndicator } from '@/components/SmallCarIndicator';
 import {
   BookingDialogWithValidation,
@@ -29,10 +36,20 @@ const Index = () => {
   const [selectedSpot, setSelectedSpot] = useState<number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
+  const [movingBooking, setMovingBooking] = useState<(BookingDestination & { id: string }) | null>(
+    null
+  );
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = format(new Date(), 'yyyy-MM-dd');
 
-  const { data: bookings = [], isLoading: loading } = useBookings({ dateFrom: today });
+  const { data: savedBookings = [], isLoading: loading } = useBookings({ dateFrom: today });
+  const bookings = useMemo(
+    () =>
+      savedBookings.map(booking =>
+        booking.id === movingBooking?.id ? { ...booking, ...movingBooking } : booking
+      ),
+    [savedBookings, movingBooking]
+  );
   const createBooking = useCreateBooking();
   const deleteBooking = useDeleteBooking();
   const updateBooking = useUpdateBooking();
@@ -70,7 +87,7 @@ const Index = () => {
           onSuccess: () => toast.success('Booking updated successfully!'),
           onError: error => {
             console.error('Error updating booking:', error);
-            toast.error(getUserErrorMessage(error, 'booking_create'));
+            toast.error(getUserErrorMessage(error, 'booking_update'));
           },
         }
       );
@@ -139,6 +156,24 @@ const Index = () => {
         toast.error(getUserErrorMessage(error, 'booking_cancel'));
       },
     });
+  };
+
+  const handleMoveBooking = async (booking: Booking, destination: BookingDestination) => {
+    if (movingBooking || updateBooking.isPending) return;
+    setMovingBooking({ id: booking.id, ...destination });
+    try {
+      await updateBooking.mutateAsync({ bookingId: booking.id, ...destination });
+      toast.success('Booking moved successfully!');
+    } catch (error) {
+      console.error('Error moving booking:', error);
+      toast.error(getUserErrorMessage(error, 'booking_update'), {
+        description: 'The booking has been returned to its original position.',
+        closeButton: true,
+        position: 'top-center',
+      });
+    } finally {
+      setMovingBooking(null);
+    }
   };
 
   // Group bookings by date + spot to show one card per spot/day
@@ -243,7 +278,15 @@ const Index = () => {
   }, [myBookings, today]);
 
   return (
-    <div className="mesh-gradient bg-background min-h-screen">
+    <BookingDragDrop
+      bookings={bookings}
+      userId={user?.id}
+      isAdmin={isAdmin}
+      disabled={Boolean(movingBooking) || updateBooking.isPending}
+      today={today}
+      onMove={handleMoveBooking}
+      className="mesh-gradient bg-background min-h-screen"
+    >
       {/* Hero Section with liquid glass effect */}
       <div className="liquid-gradient relative overflow-hidden px-4 py-8 text-white shadow-xl md:py-12">
         <div className="absolute inset-0 bg-linear-to-br from-white/10 to-transparent"></div>
@@ -338,19 +381,16 @@ const Index = () => {
                 </h2>
                 <p className="text-muted-foreground ml-10 text-sm">
                   View all team members' parking reservations. Your bookings are marked with a "You"
-                  badge.
+                  badge. Drag your bookings onto another date and spot tile to move them.
+                  {isAdmin && ' As an admin, you can move any booking.'}
                 </p>
               </div>
               {groupedUpcomingBookings.length > 0 ? (
                 <div className="space-y-3">
                   {groupedUpcomingBookings
                     .sort((a, b) => {
-                      const dateDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
-                      if (dateDiff !== 0) return dateDiff;
-                      // Same date: sort by earliest start_time in each group
-                      return (a.bookings[0]?.start_time ?? '').localeCompare(
-                        b.bookings[0]?.start_time ?? ''
-                      );
+                      const dateDiff = a.date.localeCompare(b.date);
+                      return dateDiff || a.spot_number - b.spot_number;
                     })
                     .map((group, index) => {
                       // Check if booking is today
@@ -360,8 +400,10 @@ const Index = () => {
                       const isMyBooking = group.bookings.some(b => b.user_id === user?.id);
 
                       return (
-                        <div
+                        <BookingDropTarget
                           key={`${group.date}-${group.spot_number}`}
+                          date={group.date}
+                          spotNumber={group.spot_number}
                           className={`glass-card animate-fade-in-up relative flex flex-col justify-between rounded-xl border-2 p-4 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg sm:flex-row sm:items-center ${
                             isToday
                               ? 'border-warning/50 bg-warning/5'
@@ -412,12 +454,13 @@ const Index = () => {
                                 )}
                               </div>
                               {group.bookings.map((booking, i) => (
-                                <div
+                                <DraggableBooking
                                   key={booking.id}
+                                  booking={booking}
                                   className="animate-fade-in border-border/50 bg-muted/50 mt-1.5 rounded-lg border p-2"
                                   style={{ animationDelay: `${i * 50}ms` }}
                                 >
-                                  <div className="flex items-center justify-between gap-2">
+                                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="flex min-w-0 items-center gap-2">
                                       {booking.vehicle_type === 'car' ? (
                                         <Car className="text-primary h-3 w-3 flex-shrink-0 sm:h-4 sm:w-4" />
@@ -431,7 +474,7 @@ const Index = () => {
                                         <SmallCarIndicator />
                                       )}
                                     </div>
-                                    <div className="flex flex-shrink-0 items-center gap-1.5">
+                                    <div className="flex flex-wrap items-center gap-1.5 sm:flex-shrink-0">
                                       {booking.user_id === user?.id && (
                                         <span className="bg-success rounded-full px-2 py-0.5 text-xs font-semibold text-white shadow-sm">
                                           You
@@ -456,6 +499,7 @@ const Index = () => {
                                         <Button
                                           variant="outline"
                                           size="sm"
+                                          disabled={Boolean(movingBooking)}
                                           onClick={() => handleEditBooking(booking)}
                                           className="border-primary/30 text-primary hover:border-primary hover:bg-primary h-6 px-1.5 text-[10px] transition-all hover:text-white sm:text-xs"
                                         >
@@ -466,6 +510,7 @@ const Index = () => {
                                         <Button
                                           variant="outline"
                                           size="sm"
+                                          disabled={Boolean(movingBooking)}
                                           onClick={() => handleUnbook(booking.id)}
                                           className="border-destructive/30 text-destructive hover:border-destructive hover:bg-destructive h-6 px-1.5 text-[10px] transition-all hover:text-white sm:text-xs"
                                         >
@@ -474,11 +519,11 @@ const Index = () => {
                                       )}
                                     </div>
                                   </div>
-                                </div>
+                                </DraggableBooking>
                               ))}
                             </div>
                           </div>
-                        </div>
+                        </BookingDropTarget>
                       );
                     })}
                 </div>
@@ -587,7 +632,7 @@ const Index = () => {
           onConfirm={handleConfirmBooking}
         />
       )}
-    </div>
+    </BookingDragDrop>
   );
 };
 

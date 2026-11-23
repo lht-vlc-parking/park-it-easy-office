@@ -64,6 +64,8 @@ Components call **React Query hooks** → hooks call **service layer** → servi
 - `useBookings`, `useParkingSpots`, `useStatistics` → direct Supabase queries in hooks
 - After mutations, hooks invalidate `['bookings']` query key to trigger refetches
 - Bulk creation submits each selected date through `useCreateBooking().mutateAsync`, catches failures per date, and continues. Editing always updates one booking.
+- Booking drag-and-drop uses `@dnd-kit/core` through `BookingDragDrop`. Move requests send only `date` and `spot_number` through `useUpdateBooking`; the dashboard shows the pending position and restores it on failure. Await query invalidation before clearing the pending position. Drags require ownership or admin access; existing RLS and database triggers enforce permissions and conflicts.
+- Sort upcoming booking tiles by date, then spot number (84 before 85). Sort bookings within each tile by start time, then end time.
 
 ### Key pages
 

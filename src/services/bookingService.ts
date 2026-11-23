@@ -28,6 +28,13 @@ export interface CreateBookingData {
   related_vehicle_type?: VehicleType; // For future car+moto combo bookings
 }
 
+export type UpdateBookingData =
+  | Pick<
+      CreateBookingData,
+      'date' | 'duration' | 'start_time' | 'end_time' | 'vehicle_type' | 'is_small_car'
+    >
+  | Pick<CreateBookingData, 'date' | 'spot_number'>;
+
 export interface BookingResult {
   success: boolean;
   error?: string;
@@ -299,24 +306,23 @@ export class BookingService {
   /**
    * Update an existing booking
    */
-  static async updateBooking(
-    bookingId: string,
-    data: Pick<
-      CreateBookingData,
-      'date' | 'duration' | 'start_time' | 'end_time' | 'vehicle_type' | 'is_small_car'
-    >
-  ): Promise<BookingResult> {
+  static async updateBooking(bookingId: string, data: UpdateBookingData): Promise<BookingResult> {
     try {
+      const updates =
+        'vehicle_type' in data
+          ? {
+              date: data.date,
+              duration: data.duration,
+              start_time: data.start_time,
+              end_time: data.end_time,
+              vehicle_type: data.vehicle_type,
+              capacity: this.getCapacityForVehicle(data.vehicle_type, data.is_small_car),
+            }
+          : { date: data.date, spot_number: data.spot_number };
+
       const { data: updated, error } = await supabase
         .from('bookings')
-        .update({
-          date: data.date,
-          duration: data.duration,
-          start_time: data.start_time,
-          end_time: data.end_time,
-          vehicle_type: data.vehicle_type,
-          capacity: this.getCapacityForVehicle(data.vehicle_type, data.is_small_car),
-        })
+        .update(updates)
         .eq('id', bookingId)
         .select()
         .single();

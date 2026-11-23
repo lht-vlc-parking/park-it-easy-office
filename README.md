@@ -30,6 +30,7 @@
 - **Instant Availability** — See open spots at a glance
 - **Flexible Time Slots** — Morning, afternoon, or full day
 - **Bulk Booking** — When creating a booking, select multiple days in the chosen date's Monday–Sunday week using the round day buttons. The chosen day is selected by default; past dates are disabled. Each selected date is booked independently with the same details, including small-car and book-for-someone-else options. Failures never stop the remaining bookings; a dismissible notification lists failed dates after processing and stays visible until closed. Editing remains single-date.
+- **Drag to Move** — Drag a booking onto a date-and-spot tile, including today's spot cards, to change its date or spot without changing its other details. Tiles are ordered by date, then spot number (84 before 85). Users can move their own bookings; admins can move anyone's. Failed updates restore the original position and show an error. On touchscreens, hold the drag handle; with a keyboard, focus the handle, press Space or Enter, use the arrow keys to choose a tile, then drop with Space or Enter. Escape cancels.
 - **Vehicle Support** — Cars & motorcycles (up to 4 per spot)
 - **Small Cars** — Toggle "Small car (room for 2 bikes)" when creating or editing a car booking to use 2/4 capacity instead of 3/4. Hover or focus the small-car label on booking tiles for capacity details; today's spot cards also show remaining motorcycle room in the tooltip. A small car can share with two motorcycles, but never another car.
 - **Conflict Prevention** — No double bookings, ever
@@ -112,17 +113,18 @@ Open [http://localhost:5173](http://localhost:5173) 🎉
 
 ## 🛠 Tech Stack
 
-| Category       | Technology                          |
-| -------------- | ----------------------------------- |
-| **Frontend**   | React 19.2, TypeScript 6.0, Vite 8  |
-| **Styling**    | Tailwind CSS 4.3, shadcn/ui         |
-| **Backend**    | Supabase (PostgreSQL, Auth)         |
-| **Data**       | TanStack React Query                |
-| **Charts**     | Recharts 3                          |
-| **Dates**      | react-day-picker 10                 |
-| **Testing**    | Vitest, Playwright, Testing Library |
-| **Quality**    | ESLint 10, Prettier, Husky          |
-| **Validation** | Zod 4                               |
+| Category        | Technology                          |
+| --------------- | ----------------------------------- |
+| **Frontend**    | React 19.2, TypeScript 6.0, Vite 8  |
+| **Styling**     | Tailwind CSS 4.3, shadcn/ui         |
+| **Backend**     | Supabase (PostgreSQL, Auth)         |
+| **Data**        | TanStack React Query                |
+| **Drag & Drop** | dnd-kit                             |
+| **Charts**      | Recharts 3                          |
+| **Dates**       | react-day-picker 10                 |
+| **Testing**     | Vitest, Playwright, Testing Library |
+| **Quality**     | ESLint 10, Prettier, Husky          |
+| **Validation**  | Zod 4                               |
 
 ---
 

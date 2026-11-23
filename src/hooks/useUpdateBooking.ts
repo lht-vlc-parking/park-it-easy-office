@@ -1,12 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { BookingService, type CreateBookingData } from '@/services/bookingService';
+import { BookingService, type UpdateBookingData } from '@/services/bookingService';
 
-interface UpdateBookingParams extends Pick<
-  CreateBookingData,
-  'date' | 'duration' | 'start_time' | 'end_time' | 'vehicle_type' | 'is_small_car'
-> {
+type UpdateBookingParams = UpdateBookingData & {
   bookingId: string;
-}
+};
 
 export function useUpdateBooking() {
   const queryClient = useQueryClient();
@@ -19,8 +16,6 @@ export function useUpdateBooking() {
       }
       return result.data!;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bookings'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bookings'] }),
   });
 }

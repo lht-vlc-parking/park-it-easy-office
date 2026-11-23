@@ -153,4 +153,35 @@ describe('Small-car booking capacity', () => {
     );
     expect(insert).not.toHaveBeenCalled();
   });
+
+  it('moves a booking without overwriting its time, vehicle or small-car capacity', async () => {
+    const { BookingService } = await import('@/services/bookingService');
+    const result = await BookingService.updateBooking('booking-id', {
+      date: '2099-01-16',
+      spot_number: 85,
+    });
+
+    expect(result.success).toBe(true);
+    expect(update).toHaveBeenCalledExactlyOnceWith({ date: '2099-01-16', spot_number: 85 });
+  });
+
+  it.each([
+    'This spot already has a car booking at that time',
+    'Not enough capacity. Available: 1 units, Required: 2 units',
+    'You already have a booking that overlaps this time slot',
+    'new row violates row-level security policy for table "bookings"',
+  ])('reports a rejected move: %s', async message => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    update.mockReturnValueOnce({
+      eq: () => ({
+        select: () => ({ single: async () => ({ data: null, error: { message } }) }),
+      }),
+    });
+    const { BookingService } = await import('@/services/bookingService');
+
+    expect(
+      await BookingService.updateBooking('booking-id', { date: '2099-01-16', spot_number: 85 })
+    ).toEqual({ success: false, error: message });
+    vi.restoreAllMocks();
+  });
 });
