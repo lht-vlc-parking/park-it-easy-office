@@ -29,6 +29,7 @@
 
 - **Instant Availability** — See open spots at a glance
 - **Flexible Time Slots** — Morning, afternoon, or full day
+- **Bulk Booking** — When creating a booking, select multiple days in the chosen date's Monday–Sunday week using the round day buttons. The chosen day is selected by default; past dates are disabled. Each selected date is booked independently with the same details, including small-car and book-for-someone-else options. Failures never stop the remaining bookings; a dismissible notification lists failed dates after processing and stays visible until closed. Editing remains single-date.
 - **Vehicle Support** — Cars & motorcycles (up to 4 per spot)
 - **Small Cars** — Toggle "Small car (room for 2 bikes)" when creating or editing a car booking to use 2/4 capacity instead of 3/4. Hover or focus the small-car label on booking tiles for capacity details; today's spot cards also show remaining motorcycle room in the tooltip. A small car can share with two motorcycles, but never another car.
 - **Conflict Prevention** — No double bookings, ever
@@ -75,7 +76,7 @@
 
 ### Prerequisites
 
-- **Node.js 18+** and **pnpm**
+- **Node.js 26+** and **pnpm**
 - **Supabase account** — [Sign up free](https://supabase.com/)
 
 ### Installation

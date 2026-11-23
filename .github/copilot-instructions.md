@@ -18,6 +18,8 @@ Always keep documentation up to date when making code changes:
 
 ## Commands
 
+CI and release builds use Node.js 26 and pnpm 10.
+
 ```bash
 pnpm dev                  # Start dev server (http://localhost:5173)
 pnpm build                # Production build
@@ -61,6 +63,7 @@ Components call **React Query hooks** → hooks call **service layer** → servi
 - `useCreateBooking` / `useDeleteBooking` → `BookingService.createBooking` / `cancelBooking`
 - `useBookings`, `useParkingSpots`, `useStatistics` → direct Supabase queries in hooks
 - After mutations, hooks invalidate `['bookings']` query key to trigger refetches
+- Bulk creation submits each selected date through `useCreateBooking().mutateAsync`, catches failures per date, and continues. Editing always updates one booking.
 
 ### Key pages
 

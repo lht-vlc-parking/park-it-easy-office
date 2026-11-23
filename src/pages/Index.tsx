@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react';
 import { ParkingSpotCard } from '@/components/ParkingSpotCard';
 import { SmallCarIndicator } from '@/components/SmallCarIndicator';
-import { BookingDialogWithValidation } from '@/components/BookingDialogWithValidation';
+import {
+  BookingDialogWithValidation,
+  type BookingDialogData,
+} from '@/components/BookingDialogWithValidation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -46,16 +49,7 @@ const Index = () => {
     setDialogOpen(true);
   };
 
-  const handleConfirmBooking = (booking: {
-    date: string;
-    duration: 'morning' | 'afternoon' | 'full';
-    start_time: string;
-    end_time: string;
-    vehicle_type: 'car' | 'motorcycle';
-    is_small_car?: boolean;
-    spot_number: number;
-    behalfEmail?: string;
-  }) => {
+  const handleConfirmBooking = async (booking: BookingDialogData) => {
     if (!user) {
       toast.error('You must be logged in to book a spot');
       return;
@@ -83,32 +77,58 @@ const Index = () => {
       return;
     }
 
-    createBooking.mutate(
-      {
-        date: booking.date,
-        duration: booking.duration,
-        start_time: booking.start_time,
-        end_time: booking.end_time,
-        vehicle_type: booking.vehicle_type,
-        is_small_car: booking.is_small_car,
-        spot_number: booking.spot_number,
-        behalfEmail: booking.behalfEmail,
-        userId: user.id,
-        userName: user.user_metadata?.user_name || user.email || 'Unknown',
-      },
-      {
-        onSuccess: () =>
-          toast.success(
-            booking.behalfEmail
-              ? `Booking created for ${booking.behalfEmail}`
-              : 'Parking spot booked successfully!'
-          ),
-        onError: error => {
-          console.error('Error creating booking:', error);
-          toast.error(getUserErrorMessage(error, 'booking_create'));
-        },
+    const dates = booking.dates ?? [booking.date];
+    let createdCount = 0;
+    const failures: string[] = [];
+
+    for (const date of dates) {
+      try {
+        await createBooking.mutateAsync({
+          date,
+          duration: booking.duration,
+          start_time: booking.start_time,
+          end_time: booking.end_time,
+          vehicle_type: booking.vehicle_type,
+          is_small_car: booking.is_small_car,
+          spot_number: booking.spot_number,
+          behalfEmail: booking.behalfEmail,
+          userId: user.id,
+          userName: user.user_metadata?.user_name || user.email || 'Unknown',
+        });
+        createdCount++;
+      } catch (error) {
+        console.error('Error creating booking:', { date, error });
+        failures.push(`${date}: ${getUserErrorMessage(error, 'booking_create')}`);
       }
-    );
+    }
+
+    if (failures.length > 0) {
+      toast.error(
+        createdCount > 0
+          ? `Created ${createdCount} of ${dates.length} bookings.`
+          : 'No bookings were created.',
+        {
+          description: (
+            <ul className="space-y-1">
+              {failures.map(message => (
+                <li key={message}>{message}</li>
+              ))}
+            </ul>
+          ),
+          duration: Infinity,
+          closeButton: true,
+          position: 'top-center',
+        }
+      );
+    } else if (createdCount > 0) {
+      toast.success(
+        dates.length > 1
+          ? `Created ${createdCount} of ${dates.length} bookings${booking.behalfEmail ? ` for ${booking.behalfEmail}` : ''}.`
+          : booking.behalfEmail
+            ? `Booking created for ${booking.behalfEmail}`
+            : 'Parking spot booked successfully!'
+      );
+    }
   };
 
   const handleUnbook = (bookingId: string) => {
